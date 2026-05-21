@@ -2,7 +2,7 @@ import sqlite3
 import os
 from contextlib import contextmanager
 
-DB_PATH = os.environ.get("DB_PATH", "docs.db")
+DB_PATH = os.environ.get("DB_PATH", "/app/data/docs.db")
 
 
 @contextmanager
