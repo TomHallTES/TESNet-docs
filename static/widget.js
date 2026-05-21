@@ -1,9 +1,8 @@
 (function () {
   "use strict";
 
-  const API_BASE = "https://web-production-65d144.up.railway.app"; // ← update after Railway deploy
+  const API_BASE = "https://web-production-65d144.up.railway.app";
 
-  // Icon map matching the backend ICON_MAP
   const ICONS = {
     "Data Sheet":   "fa-file-pdf",
     "Manual":       "fa-book",
@@ -111,13 +110,24 @@
   }
 
   function injectTab(documents) {
-    // --- Tab link ---
+    // --- Find tab list ---
     const tabList = document.querySelector(".tabs") || document.querySelector("[data-tab]");
     if (!tabList) {
       console.warn("[tesnet-docs] Could not find tab list element");
       return;
     }
 
+    // --- Find tab contents container ---
+    const tabContents =
+      document.querySelector(".tabs-contents") ||
+      (document.querySelector(".tab-content") && document.querySelector(".tab-content").parentElement);
+
+    if (!tabContents) {
+      console.warn("[tesnet-docs] Could not find tab contents container");
+      return;
+    }
+
+    // --- Build tab link ---
     const li = document.createElement("li");
     li.className = "tab";
 
@@ -130,28 +140,47 @@
     li.appendChild(a);
     tabList.appendChild(li);
 
-    // --- Tab content panel ---
-    const tabContents =
-      document.querySelector(".tabs-contents") ||
-      document.querySelector(".tab-content")?.parentElement;
-
-    if (!tabContents) {
-      console.warn("[tesnet-docs] Could not find tab contents container");
-      return;
-    }
-
+    // --- Build content panel (hidden by default) ---
     const panel = document.createElement("div");
     panel.className = "tab-content";
     panel.id = "tab-documents";
     panel.setAttribute("data-tab-content", "tab-documents");
+    panel.style.display = "none";
     panel.appendChild(buildTabContent(documents));
-
     tabContents.appendChild(panel);
 
-    // Trigger BigCommerce tab re-init if available
-    if (window.$ && $.fn.tabs) {
-      try { $(".tabs").tabs("refresh"); } catch (e) { /* ignore */ }
-    }
+    // --- Handle click: show our panel, hide others ---
+    a.addEventListener("click", function (e) {
+      e.preventDefault();
+
+      // Hide all content panels
+      tabContents.querySelectorAll(".tab-content").forEach(function (p) {
+        p.style.display = "none";
+      });
+
+      // Remove active state from all tab links
+      tabList.querySelectorAll(".tab-title").forEach(function (t) {
+        t.classList.remove("is-active", "active");
+        if (t.parentElement) {
+          t.parentElement.classList.remove("is-active", "active");
+        }
+      });
+
+      // Show our panel and mark active
+      panel.style.display = "block";
+      a.classList.add("is-active");
+      li.classList.add("is-active");
+    });
+
+    // --- When other tabs are clicked, hide our panel ---
+    tabList.querySelectorAll(".tab-title").forEach(function (t) {
+      if (t === a) return;
+      t.addEventListener("click", function () {
+        panel.style.display = "none";
+        a.classList.remove("is-active", "active");
+        li.classList.remove("is-active", "active");
+      });
+    });
   }
 
   function init() {
