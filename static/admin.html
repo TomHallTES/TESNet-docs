@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TESNet Docs — Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0f0f11;
+      --surface:   #18181c;
+      --border:    #2a2a30;
+      --accent:    #e8531a;
+      --accent2:   #f5a623;
+      --text:      #e8e8ea;
+      --muted:     #6b6b78;
+      --success:   #22c55e;
+      --error:     #ef4444;
+      --radius:    8px;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    /* ── Header ── */
+    header {
+      border-bottom: 1px solid var(--border);
+      padding: 0 32px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      background: var(--bg);
+      z-index: 100;
+    }
+    .logo {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.85rem;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+      text-transform: uppercase;
+    }
+    .logo span { color: var(--muted); }
+
+    #auth-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    #auth-bar input {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 6px 12px;
+      border-radius: var(--radius);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.8rem;
+      width: 220px;
+    }
+    #auth-bar input:focus { outline: none; border-color: var(--accent); }
+    #auth-btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 6px 16px;
+      border-radius: var(--radius);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    #auth-btn:hover { opacity: 0.85; }
+
+    /* ── Layout ── */
+    .app { display: none; grid-template-columns: 380px 1fr; height: calc(100vh - 56px); }
+    .app.visible { display: grid; }
+
+    /* ── Left panel: upload form ── */
+    .panel-left {
+      border-right: 1px solid var(--border);
+      padding: 28px 24px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .panel-title {
+      font-size: 0.7rem;
+      font-family: 'DM Mono', monospace;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group label { font-size: 0.8rem; color: var(--muted); font-weight: 500; }
+    .form-group input, .form-group select {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 9px 12px;
+      border-radius: var(--radius);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem;
+      transition: border-color 0.15s;
+    }
+    .form-group input:focus, .form-group select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    .form-group select option { background: var(--surface); }
+
+    /* Drop zone */
+    #drop-zone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 32px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      position: relative;
+    }
+    #drop-zone:hover, #drop-zone.drag-over {
+      border-color: var(--accent);
+      background: rgba(232,83,26,0.05);
+    }
+    #drop-zone input[type="file"] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+    #drop-zone .drop-icon { font-size: 2rem; margin-bottom: 8px; }
+    #drop-zone .drop-label { font-size: 0.85rem; color: var(--muted); }
+    #drop-zone .drop-label strong { color: var(--text); }
+    #file-name {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--accent2);
+      margin-top: 8px;
+    }
+
+    #upload-btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 12px;
+      border-radius: var(--radius);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    #upload-btn:hover { opacity: 0.85; }
+    #upload-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    #upload-status {
+      font-size: 0.82rem;
+      padding: 10px 12px;
+      border-radius: var(--radius);
+      display: none;
+    }
+    #upload-status.success { background: rgba(34,197,94,0.1); color: var(--success); border: 1px solid rgba(34,197,94,0.2); }
+    #upload-status.error   { background: rgba(239,68,68,0.1);  color: var(--error);   border: 1px solid rgba(239,68,68,0.2); }
+
+    /* Progress bar */
+    #progress-wrap { display: none; height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
+    #progress-bar  { height: 100%; background: var(--accent); width: 0%; transition: width 0.3s; }
+
+    /* ── Right panel: document list ── */
+    .panel-right {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .list-header {
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    #search-sku {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px 12px;
+      border-radius: var(--radius);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.85rem;
+      width: 240px;
+    }
+    #search-sku:focus { outline: none; border-color: var(--accent); }
+    #refresh-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 8px 14px;
+      border-radius: var(--radius);
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    #refresh-btn:hover { color: var(--text); border-color: var(--accent); }
+    #doc-count { font-family: 'DM Mono', monospace; font-size: 0.75rem; color: var(--muted); margin-left: auto; }
+
+    #doc-list { flex: 1; overflow-y: auto; padding: 16px 24px; display: flex; flex-direction: column; gap: 8px; }
+
+    .doc-row {
+      display: grid;
+      grid-template-columns: 90px 1fr 130px auto;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      transition: border-color 0.15s;
+    }
+    .doc-row:hover { border-color: var(--muted); }
+
+    .doc-sku {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--accent2);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .doc-label { font-size: 0.88rem; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .doc-type {
+      font-size: 0.72rem;
+      font-family: 'DM Mono', monospace;
+      color: var(--muted);
+      background: var(--bg);
+      padding: 3px 8px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      text-align: center;
+      white-space: nowrap;
+    }
+    .doc-actions { display: flex; gap: 6px; }
+    .btn-view, .btn-delete {
+      border: none;
+      border-radius: 5px;
+      padding: 5px 10px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 500;
+      transition: opacity 0.15s;
+    }
+    .btn-view   { background: rgba(232,83,26,0.15); color: var(--accent); }
+    .btn-delete { background: rgba(239,68,68,0.1);  color: var(--error); }
+    .btn-view:hover, .btn-delete:hover { opacity: 0.75; }
+
+    #empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--muted);
+      font-size: 0.9rem;
+      display: none;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">TESNet <span>/</span> Docs Admin</div>
+  <div id="auth-bar">
+    <input type="password" id="token-input" placeholder="Admin token…" />
+    <button id="auth-btn">Sign in</button>
+  </div>
+</header>
+
+<div class="app" id="app">
+  <!-- Left: Upload -->
+  <div class="panel-left">
+    <div>
+      <div class="panel-title">Upload Document</div>
+    </div>
+
+    <div class="form-group">
+      <label>Product SKU</label>
+      <input type="text" id="sku" placeholder="e.g. HVVO14-L" autocomplete="off" />
+    </div>
+
+    <div class="form-group">
+      <label>Document Label</label>
+      <input type="text" id="label" placeholder="e.g. Data Sheet" autocomplete="off" />
+    </div>
+
+    <div class="form-group">
+      <label>Document Type</label>
+      <select id="doc-type">
+        <option>Data Sheet</option>
+        <option>Manual</option>
+        <option>Certificate</option>
+        <option>Drawing</option>
+        <option>Brochure</option>
+        <option>Installation</option>
+        <option>Compliance</option>
+        <option>Document</option>
+      </select>
+    </div>
+
+    <div>
+      <label class="panel-title" style="display:block;margin-bottom:8px;">PDF File</label>
+      <div id="drop-zone">
+        <input type="file" id="file-input" accept=".pdf,application/pdf" />
+        <div class="drop-icon">📄</div>
+        <div class="drop-label"><strong>Click to choose</strong> or drag & drop</div>
+        <div class="drop-label">PDF only · max 20MB</div>
+        <div id="file-name"></div>
+      </div>
+    </div>
+
+    <div id="progress-wrap"><div id="progress-bar"></div></div>
+
+    <button id="upload-btn">Upload Document</button>
+    <div id="upload-status"></div>
+  </div>
+
+  <!-- Right: Document list -->
+  <div class="panel-right">
+    <div class="list-header">
+      <input type="text" id="search-sku" placeholder="Filter by SKU…" />
+      <button id="refresh-btn">↻ Refresh</button>
+      <span id="doc-count"></span>
+    </div>
+    <div id="doc-list">
+      <div id="empty-state">No documents found.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const API = "";  // same origin
+  let TOKEN = "";
+  let allDocs = [];
+
+  // ── Auth ──
+  document.getElementById("auth-btn").addEventListener("click", signIn);
+  document.getElementById("token-input").addEventListener("keydown", e => { if (e.key === "Enter") signIn(); });
+
+  async function signIn() {
+    TOKEN = document.getElementById("token-input").value.trim();
+    if (!TOKEN) return;
+    try {
+      const r = await fetch(`${API}/admin/documents`, { headers: { "X-Admin-Token": TOKEN } });
+      if (r.status === 401) { alert("Invalid token."); return; }
+      const data = await r.json();
+      allDocs = data;
+      document.getElementById("app").classList.add("visible");
+      renderDocs(allDocs);
+    } catch (e) { alert("Could not connect to API."); }
+  }
+
+  // ── Upload ──
+  const dropZone  = document.getElementById("drop-zone");
+  const fileInput = document.getElementById("file-input");
+  const fileName  = document.getElementById("file-name");
+
+  fileInput.addEventListener("change", () => {
+    fileName.textContent = fileInput.files[0]?.name || "";
+  });
+
+  dropZone.addEventListener("dragover",  e => { e.preventDefault(); dropZone.classList.add("drag-over"); });
+  dropZone.addEventListener("dragleave", () => dropZone.classList.remove("drag-over"));
+  dropZone.addEventListener("drop", e => {
+    e.preventDefault();
+    dropZone.classList.remove("drag-over");
+    const file = e.dataTransfer.files[0];
+    if (file) { fileInput.files = e.dataTransfer.files; fileName.textContent = file.name; }
+  });
+
+  document.getElementById("upload-btn").addEventListener("click", async () => {
+    const sku     = document.getElementById("sku").value.trim();
+    const label   = document.getElementById("label").value.trim();
+    const docType = document.getElementById("doc-type").value;
+    const file    = fileInput.files[0];
+
+    if (!sku || !label || !file) {
+      showStatus("Please fill in SKU, label and choose a file.", "error");
+      return;
+    }
+
+    const btn = document.getElementById("upload-btn");
+    btn.disabled = true;
+    btn.textContent = "Uploading…";
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("sku", sku);
+    formData.append("label", label);
+    formData.append("doc_type", docType);
+
+    const progressWrap = document.getElementById("progress-wrap");
+    const progressBar  = document.getElementById("progress-bar");
+    progressWrap.style.display = "block";
+    progressBar.style.width = "30%";
+
+    try {
+      const r = await fetch(`${API}/admin/upload`, {
+        method: "POST",
+        headers: { "X-Admin-Token": TOKEN },
+        body: formData,
+      });
+      progressBar.style.width = "100%";
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.detail || "Upload failed");
+
+      showStatus(`✓ Uploaded: ${label} → ${sku}`, "success");
+      fileInput.value = "";
+      fileName.textContent = "";
+      await loadDocs();
+    } catch (e) {
+      showStatus("✗ " + e.message, "error");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Upload Document";
+      setTimeout(() => { progressWrap.style.display = "none"; progressBar.style.width = "0%"; }, 800);
+    }
+  });
+
+  function showStatus(msg, type) {
+    const el = document.getElementById("upload-status");
+    el.textContent = msg;
+    el.className = type;
+    el.style.display = "block";
+    setTimeout(() => { el.style.display = "none"; }, 5000);
+  }
+
+  // ── Document list ──
+  async function loadDocs() {
+    const filter = document.getElementById("search-sku").value.trim();
+    const url = filter ? `${API}/admin/documents?sku=${encodeURIComponent(filter)}` : `${API}/admin/documents`;
+    const r = await fetch(url, { headers: { "X-Admin-Token": TOKEN } });
+    allDocs = await r.json();
+    renderDocs(allDocs);
+  }
+
+  function renderDocs(docs) {
+    const list  = document.getElementById("doc-list");
+    const empty = document.getElementById("empty-state");
+    document.getElementById("doc-count").textContent = `${docs.length} document${docs.length !== 1 ? "s" : ""}`;
+
+    // Remove existing rows
+    list.querySelectorAll(".doc-row").forEach(r => r.remove());
+
+    if (!docs.length) { empty.style.display = "block"; return; }
+    empty.style.display = "none";
+
+    docs.forEach(doc => {
+      const row = document.createElement("div");
+      row.className = "doc-row";
+      row.innerHTML = `
+        <div class="doc-sku">${doc.sku}</div>
+        <div class="doc-label" title="${doc.label}">${doc.label}</div>
+        <div class="doc-type">${doc.doc_type}</div>
+        <div class="doc-actions">
+          <button class="btn-view" onclick="window.open('${doc.url}','_blank')">View</button>
+          <button class="btn-delete" data-id="${doc.id}">Delete</button>
+        </div>
+      `;
+      list.appendChild(row);
+    });
+
+    list.querySelectorAll(".btn-delete").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        if (!confirm("Delete this document?")) return;
+        await fetch(`${API}/admin/documents/${btn.dataset.id}`, {
+          method: "DELETE",
+          headers: { "X-Admin-Token": TOKEN },
+        });
+        await loadDocs();
+      });
+    });
+  }
+
+  document.getElementById("refresh-btn").addEventListener("click", loadDocs);
+  document.getElementById("search-sku").addEventListener("input", () => {
+    const q = document.getElementById("search-sku").value.trim().toLowerCase();
+    const filtered = q ? allDocs.filter(d => d.sku.toLowerCase().includes(q)) : allDocs;
+    renderDocs(filtered);
+  });
+</script>
+</body>
+</html>

@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from routers import docs, admin
+from routers import docs, admin, upload
 import uvicorn
 
 app = FastAPI(title="Tesnet Docs Widget API")
@@ -18,6 +18,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 app.include_router(docs.router, prefix="/api")
 app.include_router(admin.router, prefix="/admin")
+app.include_router(upload.router, prefix="/admin")
 
 
 @app.get("/health")
