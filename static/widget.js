@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  const API_BASE = "https://your-app.railway.app"; // ← update after Railway deploy
+  const API_BASE = "https://web-production-65d144.up.railway.app"; // ← update after Railway deploy
 
   // Icon map matching the backend ICON_MAP
   const ICONS = {
