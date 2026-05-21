@@ -23,7 +23,7 @@ def get_docs(sku: str):
 
     with get_db() as conn:
         rows = conn.execute(
-            "SELECT label, doc_type, s3_url FROM documents WHERE sku = ? ORDER BY doc_type, label",
+            "SELECT label, doc_type, url FROM product_documents WHERE sku = ? ORDER BY doc_type, label",
             (sku,)
         ).fetchall()
 
@@ -35,7 +35,7 @@ def get_docs(sku: str):
             "label":    row["label"],
             "doc_type": row["doc_type"],
             "icon":     ICON_MAP.get(row["doc_type"], "fa-file-alt"),
-            "url":      row["s3_url"],
+            "url":      row["url"],
         }
         for row in rows
     ]

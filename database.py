@@ -2,7 +2,7 @@ import sqlite3
 import os
 from contextlib import contextmanager
 
-DB_PATH = os.environ.get("DB_PATH", "/app/data/docs.db")
+DB_PATH = os.environ.get("DB_PATH", "docs.db")
 
 
 @contextmanager
@@ -19,14 +19,14 @@ def init_db():
     """Create tables if they don't exist (safe to run against existing DB)."""
     with get_db() as conn:
         conn.execute("""
-            CREATE TABLE IF NOT EXISTS documents (
+            CREATE TABLE IF NOT EXISTS product_documents (
                 id          INTEGER PRIMARY KEY AUTOINCREMENT,
                 sku         TEXT    NOT NULL,
                 label       TEXT    NOT NULL,
                 doc_type    TEXT    NOT NULL DEFAULT 'Document',
-                s3_url      TEXT    NOT NULL,
+                url         TEXT    NOT NULL,
                 created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         """)
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_sku ON documents(sku)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_sku ON product_documents(sku)")
         conn.commit()
